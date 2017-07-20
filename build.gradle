@@ -1,0 +1,34 @@
+plugins {
+    id 'io.franzbecker.gradle-lombok' version '1.8'
+}
+
+group = 'net.opmcorp'
+version = '0.1.0'
+
+apply plugin: 'groovy'
+apply plugin: 'java'
+apply plugin: 'maven'
+
+//IDE
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+
+sourceCompatibility = targetCompatibility = 1.8
+compileJava.options.encoding = 'UTF-8'
+
+dependencies {
+    compile gradleApi()
+    compile localGroovy()
+
+    compile 'org.json:json:20170516'
+    compile 'commons-io:commons-io:2.5'
+    compile 'com.google.guava:guava:22.0'
+
+    testCompile 'org.assertj:assertj-core-java8:1.0.0m1'
+    testCompile 'junit:junit:4.12'
+}
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+}
