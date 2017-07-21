@@ -1,18 +1,1 @@
-{
-  "craftystates_marker": 1,
-  "defaults": {
-    "model": "cube_all"
-  },
-  "variants": {
-    "inventory": {
-      "textures#all": "qbar:blocks/chalcopyrite"
-    },
-    "matcher": {
-      "ores": ["chalcopyrite", "malachite", "tetrahedrite"],
-      "richness": ["poor", "normal", "rich"],
-      "values": {
-        "texture#all": "qbar:blocks/#ores_#richness"
-      }
-    }
-  }
-}
+{"forge_marker":1,"defaults":{"transform":"forge:default-block","textures":{},"model":"cube_all"},"variants":{"ores=malachite,richness=poor":{"textures":{"all":"qbar:blocks/malachite_poor"},"model":"cube_all"},"ores=chalcopyrite,richness=normal":{"textures":{"all":"qbar:blocks/chalcopyrite_normal"},"model":"cube_all"},"ores=tetrahedrite,richness=poor":{"textures":{"all":"qbar:blocks/tetrahedrite_poor"},"model":"cube_all"},"ores=chalcopyrite,richness=poor":{"textures":{"all":"qbar:blocks/chalcopyrite_poor"},"model":"cube_all"},"ores=malachite,richness=normal":{"textures":{"all":"qbar:blocks/malachite_normal"},"model":"cube_all"},"ores=tetrahedrite,richness=normal":{"textures":{"all":"qbar:blocks/tetrahedrite_normal"},"model":"cube_all"},"ores=tetrahedrite,richness=rich":{"textures":{"all":"qbar:blocks/tetrahedrite_rich"},"model":"cube_all"},"ores=malachite,richness=rich":{"textures":{"all":"qbar:blocks/malachite_rich"},"model":"cube_all"},"inventory":{"textures":{"all":"qbar:blocks/chalcopyrite"}},"ores=chalcopyrite,richness=rich":{"textures":{"all":"qbar:blocks/chalcopyrite_rich"},"model":"cube_all"}}}

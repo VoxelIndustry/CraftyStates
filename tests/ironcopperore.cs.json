@@ -1,0 +1,18 @@
+{
+  "craftystates_marker": 1,
+  "defaults": {
+    "model": "cube_all"
+  },
+  "variants": {
+    "inventory": {
+      "texture#all": "qbar:blocks/chalcopyrite"
+    },
+    "matcher": {
+      "ores": ["chalcopyrite", "malachite", "tetrahedrite"],
+      "richness": ["poor", "normal", "rich"],
+      "values": {
+        "texture#all": "qbar:blocks/#ores_#richness"
+      }
+    }
+  }
+}

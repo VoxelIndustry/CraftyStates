@@ -11,6 +11,6 @@ public class TestBlockStateTranspiler
 	{
 		BlockStateTranspiler transpiler = new BlockStateTranspiler();
 
-		transpiler.transpileBlockState(new File("tests/ironcopperore.json"));
+		transpiler.transpileBlockState(new File("tests/ironcopperore.cs.json"));
 	}
 }
