@@ -2,7 +2,7 @@
 
 CraftyStates is a gradle plugin that act as a transpiler between 'smart' blockstates jsons and Forge format.
 
-### Installing
+## Installing
 
 Add the plugin and the maven repository containing it to the buildscript:
 ```gradle
@@ -33,7 +33,7 @@ statesTranspiling {
 }
 ```
 
-### Usage
+## Usage
 Create a file named <blockstate name>.cs.json then add the marker `craftystates_marker` in it.
 The current version of the format is 1.
 
@@ -41,11 +41,11 @@ Inside the .cs.json file any valid forge blockstate syntax can be used and mixed
 
 Blockstates generation happens before the gradle task `processResources`, to generate the blockstates before testing you can add the task `blockstatesTranspiling` as a pre-launch command in your IDE.
 
-### Features
+## Features
 
-#### Default values infering
+### Default values infering
 
-Before
+Forge
 ```json
   "defaults": {
     "model": "cube_all",
@@ -53,16 +53,16 @@ Before
     "transform": "forge:default-block"
   }
 ```
-After
+CraftyStates
 ```json
   "defaults": {
     "model": "cube_all"
   }
 ```
 
-#### Redundant model specification
+### Redundant model specification
 
-Before
+Forge
 ```json
 {
   "defaults": {
@@ -86,7 +86,7 @@ Before
   }
 }
 ```
-After
+CraftyStates
 ```json
 {
   "defaults": {
@@ -107,22 +107,22 @@ After
 }
 ```
 
-#### Textures block expansion
+### Textures block expansion
 
-Before
+Forge
 ```json
   "textures": {
     "all": "examplemod:blocks/dummyblock"
   }
 ```
-After
+CraftyStates
 ```json
   "texture#all": "examplemod:blocks/dummyblock"
 ```
 
-#### Variants matcher and value replacement
+### Variants matcher and value replacement
 
-Before
+Forge
 ```json
     "type=sandstone,mood=happy": {
       "model": "cube_all",
@@ -149,7 +149,7 @@ Before
       }
     }
 ```
-After
+CraftyStates
 ```json
   "matcher": {
       "type": ["sandstone", "stone"],
@@ -160,8 +160,9 @@ After
     }
 ```
 
-### Example
-This snippet use all the current features of the transpiler
+## Example
+<details>
+<summary>This snippet use all the current features of the transpiler</summary>
 
 ```json
 {
@@ -183,8 +184,12 @@ This snippet use all the current features of the transpiler
   }
 }
 ```
+</details>
 
-The produced output is
+
+<details>
+<summary>The produced output is</summary>
+
 ```json
 {
   "defaults": {
@@ -226,3 +231,4 @@ The produced output is
   "forge_marker": 1
 }
 ```
+</details>
