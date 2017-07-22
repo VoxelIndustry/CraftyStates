@@ -26,6 +26,7 @@ public class BlockStatesTask extends DefaultTask
 				new File(getProject().getRootDir(), extension.getBlockstatesPath()), new String[]{"cs.json"}, true);
 
 		BlockStateTranspiler task = new BlockStateTranspiler();
+		task.setExtension(extension);
 		blockstates.forEach(task::transpileBlockState);
 	}
 }

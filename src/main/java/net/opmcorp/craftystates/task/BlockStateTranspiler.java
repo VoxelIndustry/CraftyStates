@@ -1,26 +1,45 @@
 package net.opmcorp.craftystates.task;
 
 import com.google.common.collect.Lists;
+import com.google.gson.*;
+import lombok.Setter;
 import net.opmcorp.craftystates.CraftyStates;
+import net.opmcorp.craftystates.CraftyStatesExtension;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Setter
 public class BlockStateTranspiler
 {
 	public static final int BLOCKSTATES_VERSION = 1;
+
+	private CraftyStatesExtension extension;
+
+	private Gson gson = null;
+
+	private Gson getGson()
+	{
+		if (gson == null)
+		{
+			if (extension.isPrettyPrinting())
+				gson = new GsonBuilder().disableHtmlEscaping().setPrettyPrinting().create();
+			else
+				gson = new Gson();
+		}
+		return gson;
+	}
+
 
 	public void transpileBlockState(File file)
 	{
@@ -29,7 +48,7 @@ public class BlockStateTranspiler
 		{
 			InputStream inputStream = new FileInputStream(file);
 
-			json = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
+			json = IOUtils.toString(inputStream);
 
 			inputStream.close();
 		} catch (IOException e)
@@ -37,7 +56,7 @@ public class BlockStateTranspiler
 			e.printStackTrace();
 		}
 
-		JSONObject jsonObject = new JSONObject(json);
+		JsonObject jsonObject = new JsonParser().parse(json).getAsJsonObject();
 
 		if (!jsonObject.has("craftystates_marker"))
 		{
@@ -45,20 +64,20 @@ public class BlockStateTranspiler
 			return;
 		}
 
-		if (jsonObject.getInt("craftystates_marker") > BLOCKSTATES_VERSION)
-			throw new UnsupportedOperationException("This version of CraftyStates cannot transpile a file with the marker " + jsonObject.getInt("craftystates_marker"));
+		if (jsonObject.get("craftystates_marker").getAsInt() > BLOCKSTATES_VERSION)
+			throw new UnsupportedOperationException("This version of CraftyStates cannot transpile a file with the marker " + jsonObject.get("craftystates_marker").getAsInt());
 
-		jsonObject.put("forge_marker", 1);
+		jsonObject.addProperty("forge_marker", 1);
 
-		JSONObject defaults = jsonObject.getJSONObject("defaults");
+		JsonObject defaults = jsonObject.get("defaults").getAsJsonObject();
 
 		if (!defaults.has("textures"))
-			defaults.put("textures", new JSONObject());
+			defaults.add("textures", new JsonObject());
 		if (!defaults.has("transform"))
-			defaults.put("transform", "forge:default-block");
+			defaults.addProperty("transform", "forge:default-block");
 
-		if (jsonObject.getJSONObject("variants").has("matcher"))
-			this.convertMatcher(jsonObject, jsonObject.getJSONObject("variants").getJSONObject("matcher"), defaults);
+		if (jsonObject.get("variants").getAsJsonObject().has("matcher"))
+			this.convertMatcher(jsonObject, jsonObject.get("variants").getAsJsonObject().get("matcher").getAsJsonObject(), defaults);
 		jsonObject.remove("craftystates_marker");
 
 		this.replaceTextures(jsonObject);
@@ -68,8 +87,8 @@ public class BlockStateTranspiler
 			File dest = new File(file.getAbsolutePath().replace(".cs.json", ".json"));
 
 			if (!dest.getName().equals(file.getName()))
-				FileUtils.write(dest,
-						jsonObject.toString(), StandardCharsets.UTF_8);
+				FileUtils.writeByteArrayToFile(dest,
+						gson.toJson(jsonObject).getBytes(StandardCharsets.UTF_8));
 			else
 				CraftyStates.getLogger().warn("Blockstate [{}] was about to be erased, exported name [{}] is the same as" +
 						" the source. Nothing will be written.", file.getName(), dest.getName());
@@ -79,24 +98,28 @@ public class BlockStateTranspiler
 		}
 	}
 
-	private void convertMatcher(JSONObject jsonObject, JSONObject matcher, JSONObject defaults)
+	@SuppressWarnings("unchecked")
+	private void convertMatcher(JsonObject jsonObject, JsonObject matcher, JsonObject defaults)
 	{
-		List<List<String>> properties = Lists.cartesianProduct(matcher.keySet().stream().filter(key -> !key.equals("values"))
-				.map(key -> matcher.getJSONArray(key).toList().stream().map(value -> key + "=" + value)
-						.collect(Collectors.toList())).collect(Collectors.toList()));
+		List<List<String>> properties = Lists.cartesianProduct(matcher.entrySet().stream().filter(entry -> !entry.getKey().equals("values"))
+				.map(entry -> ((ArrayList<String>) this.getGson().fromJson(matcher.get(entry.getKey()).getAsJsonArray().toString(), ArrayList.class))
+						.stream().map(value -> entry.getKey() + "=" + value).collect(Collectors.toList())).collect(Collectors.toList()));
 
-		properties = Lists.newArrayList(properties.stream().map(Lists::newArrayList).collect(Collectors.toList()));
-		properties.forEach(Collections::reverse);
-
-		JSONObject values = matcher.getJSONObject("values");
+		JsonObject values = matcher.get("values").getAsJsonObject();
 
 		for (List<String> property : properties)
 		{
-			JSONObject value = new JSONObject(values.toString());
+			JsonObject value = new JsonObject();
+
+			if (!values.has("model"))
+				value.addProperty("model", defaults.get("model").getAsString());
+
+			for (Map.Entry<String, JsonElement> p : values.entrySet())
+				value.add(p.getKey(), p.getValue());
 
 			Map<String, String> propertyValues = new HashMap<>();
 			property.forEach(p -> propertyValues.put(p.split("=")[0], p.split("=")[1]));
-			RecursiveReplacer.recursiveReplace(value, String.class, toReplace ->
+			RecursiveReplacer.recursiveReplaceString(value, toReplace ->
 			{
 				String rtn = toReplace;
 
@@ -105,52 +128,50 @@ public class BlockStateTranspiler
 					if (rtn.contains("#" + p.getKey()))
 						rtn = rtn.replace("#" + p.getKey(), p.getValue());
 				}
-				return rtn;
+				return getGson().toJsonTree(rtn);
 			});
 
-			if (!values.has("model"))
-				value.put("model", defaults.getString("model"));
-			jsonObject.getJSONObject("variants").put(property.stream().collect(Collectors.joining(",")), value);
+			jsonObject.get("variants").getAsJsonObject().add(property.stream().collect(Collectors.joining(",")), value);
 		}
 
-		jsonObject.getJSONObject("variants").remove("matcher");
+		jsonObject.get("variants").getAsJsonObject().remove("matcher");
 	}
 
-	private void replaceTextures(JSONObject toReplace)
+	private void replaceTextures(JsonObject toReplace)
 	{
-		List<String> keys = Lists.newArrayList(toReplace.keys());
-		keys.forEach(key ->
+		List<Map.Entry<String, JsonElement>> keys = Lists.newArrayList(toReplace.entrySet());
+		keys.forEach(entry ->
 		{
-			if (toReplace.get(key) instanceof JSONObject)
-				replaceTextures(toReplace.getJSONObject(key));
-			else if (toReplace.get(key) instanceof JSONArray)
-				replaceTexturesArray(toReplace.getJSONArray(key));
-			else if (toReplace.get(key) instanceof String)
+			if (entry.getValue().isJsonObject())
+				replaceTextures(entry.getValue().getAsJsonObject());
+			else if (entry.getValue().isJsonArray())
+				replaceTexturesArray(entry.getValue().getAsJsonArray());
+			else if (entry.getValue().isJsonPrimitive() && entry.getValue().getAsJsonPrimitive().isString())
 			{
-				if (key.startsWith("textures#"))
+				if (entry.getKey().startsWith("textures#"))
 					CraftyStates.getLogger().warn("Found a malformed texture pattern [{} -> {}], it will not be processed.",
-							key, key.replace("textures#", "texture#"));
-				if (key.startsWith("texture#"))
+							entry.getKey(), entry.getKey().replace("textures#", "texture#"));
+				if (entry.getKey().startsWith("texture#"))
 				{
 					if (!toReplace.has("textures"))
-						toReplace.put("textures", new JSONObject());
-					toReplace.getJSONObject("textures").put(key.replace("texture#", ""), (String) toReplace.get(key));
-					toReplace.remove(key);
+						toReplace.add("textures", new JsonObject());
+					toReplace.get("textures").getAsJsonObject().add(entry.getKey().replace("texture#", ""), entry.getValue());
+					toReplace.remove(entry.getKey());
 				}
 			}
 		});
 	}
 
-	private void replaceTexturesArray(JSONArray toReplace)
+	private void replaceTexturesArray(JsonArray toReplace)
 	{
-		for (int i = 0; i < toReplace.length(); i++)
+		for (int i = 0; i < toReplace.size(); i++)
 		{
 			Object object = toReplace.get(i);
 
-			if (object instanceof JSONObject)
-				replaceTextures((JSONObject) object);
-			else if (object instanceof JSONArray)
-				replaceTexturesArray((JSONArray) object);
+			if (object instanceof JsonObject)
+				replaceTextures((JsonObject) object);
+			else if (object instanceof JsonArray)
+				replaceTexturesArray((JsonArray) object);
 		}
 	}
 }

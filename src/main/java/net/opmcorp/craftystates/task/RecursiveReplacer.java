@@ -1,37 +1,38 @@
 package net.opmcorp.craftystates.task;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 import java.util.function.Function;
 
 public class RecursiveReplacer
 {
-	public static <T> void recursiveReplace(JSONObject toReplace, Class<T> clazz, Function<T, ?> replacer)
+	public static void recursiveReplaceString(JsonObject toReplace, Function<String, JsonElement> replacer)
 	{
-		toReplace.keySet().forEach(key ->
+		toReplace.entrySet().forEach(entry ->
 		{
-			if (toReplace.get(key) instanceof JSONObject)
-				recursiveReplace(toReplace.getJSONObject(key), clazz, replacer);
-			else if (toReplace.get(key) instanceof JSONArray)
-				recursiveReplaceArray(toReplace.getJSONArray(key), clazz, replacer);
-			if (clazz.isInstance(toReplace.get(key)))
-				toReplace.put(key, replacer.apply((T) toReplace.get(key)));
+			if (entry.getValue().isJsonObject())
+				recursiveReplaceString(entry.getValue().getAsJsonObject(), replacer);
+			else if (entry.getValue().isJsonArray())
+				recursiveReplaceStringInArray(entry.getValue().getAsJsonArray(), replacer);
+			else if (entry.getValue().isJsonPrimitive() && entry.getValue().getAsJsonPrimitive().isString())
+				toReplace.add(entry.getKey(), replacer.apply(entry.getValue().getAsString()));
 		});
 	}
 
-	public static <T> void recursiveReplaceArray(JSONArray toReplace, Class<T> clazz, Function<T, ?> replacer)
+	public static void recursiveReplaceStringInArray(JsonArray toReplace, Function<String, JsonElement> replacer)
 	{
-		for (int i = 0; i < toReplace.length(); i++)
+		for (int i = 0; i < toReplace.size(); i++)
 		{
-			Object object = toReplace.get(i);
+			JsonElement element = toReplace.get(i);
 
-			if (object instanceof JSONObject)
-				recursiveReplace((JSONObject) object, clazz, replacer);
-			else if (object instanceof JSONArray)
-				recursiveReplaceArray((JSONArray) object, clazz, replacer);
-			if (clazz.isInstance(object))
-				toReplace.put(i, replacer.apply((T) toReplace.get(i)));
+			if (element.isJsonObject())
+				recursiveReplaceString(element.getAsJsonObject(), replacer);
+			else if (element.isJsonArray())
+				recursiveReplaceStringInArray(element.getAsJsonArray(), replacer);
+			else if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString())
+				toReplace.set(i, replacer.apply(element.getAsString()));
 		}
 	}
 }
