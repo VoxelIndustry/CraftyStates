@@ -23,7 +23,7 @@ public class BlockStatesTask extends DefaultTask
 			extension = new CraftyStatesExtension();
 
 		Collection<File> blockstates = FileUtils.listFiles(
-				new File(getProject().getRootDir(), extension.getBlockstatesPath()), new String[]{"cs.json"}, true);
+				new File(getProject().getProjectDir(), extension.getBlockstatesPath()), new String[]{"cs.json"}, true);
 
 		BlockStateTranspiler task = new BlockStateTranspiler();
 		task.setExtension(extension);
